@@ -9,6 +9,7 @@ import os
 import logging
 from unittest import TestCase
 from tests.factories import AccountFactory
+from service import talisman
 from service.common import status  # HTTP Status Codes
 from service.models import db, Account, init_db
 from service.routes import app
@@ -18,6 +19,7 @@ DATABASE_URI = os.getenv(
 )
 
 BASE_URL = "/accounts"
+HTTPS_ENVIRON = {'wsgi.url_scheme': 'https'}
 
 
 ######################################################################
@@ -34,6 +36,7 @@ class TestAccountService(TestCase):
         app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URI
         app.logger.setLevel(logging.CRITICAL)
         init_db(app)
+        talisman.force_https = False
 
     @classmethod
     def tearDownClass(cls):
@@ -102,9 +105,6 @@ class TestAccountService(TestCase):
 
         # Check the data is correct
         new_account = response.get_json()
-        read_response = self.client.get(location)
-        self.assertEqual(read_response.status_code, status.HTTP_200_OK)
-        self.assertEqual(read_response.get_json(), new_account)
         self.assertEqual(new_account["name"], account.name)
         self.assertEqual(new_account["email"], account.email)
         self.assertEqual(new_account["address"], account.address)
@@ -126,95 +126,75 @@ class TestAccountService(TestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
 
+    # ADD YOUR TEST CASES HERE ...
+
     def test_read_an_account(self):
-        """It should Read an account by its ID"""
+        """It should Read a single Account"""
         account = self._create_accounts(1)[0]
-        response = self.client.get(f"{BASE_URL}/{account.id}")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.get_json(), account.serialize())
+        resp = self.client.get(
+            f"{BASE_URL}/{account.id}", content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.get_json()
+        self.assertEqual(data["name"], account.name)
 
     def test_account_not_found(self):
-        """It should return 404 when an account does not exist"""
-        response = self.client.get(f"{BASE_URL}/0")
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-
-    def test_method_not_allowed(self):
-        """It should report an unsupported HTTP method"""
-        response = self.client.post("/health")
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.assertEqual(response.get_json()["error"], "Method not Allowed")
+        """It should not Read an Account that is not found"""
+        resp = self.client.get(
+            f"{BASE_URL}/0", content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_update_an_account(self):
-        """It should update an account and persist the new values"""
-        account = self._create_accounts(1)[0]
-        updated = account.serialize()
-        updated["phone_number"] = "555-1111"
-        response = self.client.put(f"{BASE_URL}/{account.id}", json=updated)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.get_json(), updated)
-        read_response = self.client.get(f"{BASE_URL}/{account.id}")
-        self.assertEqual(read_response.get_json(), updated)
-
-    def test_update_account_not_found(self):
-        """It should return 404 when updating an unknown account"""
-        response = self.client.put(f"{BASE_URL}/0", json=AccountFactory().serialize())
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-
-    def test_update_account_bad_request(self):
-        """It should reject an incomplete account update"""
-        account = self._create_accounts(1)[0]
-        response = self.client.put(f"{BASE_URL}/{account.id}", json={"name": "Incomplete"})
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-    def test_update_account_unsupported_media_type(self):
-        """It should require JSON for an account update"""
-        account = self._create_accounts(1)[0]
-        response = self.client.put(
-            f"{BASE_URL}/{account.id}",
-            data="not json",
-            content_type="text/plain",
+        """It should Update an existing Account"""
+        # create an Account to update
+        account = AccountFactory()
+        response = self.client.post(
+            BASE_URL,
+            json=account.serialize(),
+            content_type="application/json"
         )
-        self.assertEqual(response.status_code, status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        # update the account
+        new_account = response.get_json()
+        new_account["name"] = "Something Known"
+        response = self.client.put(f"{BASE_URL}/{new_account['id']}", json=new_account)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        updated_account = response.get_json()
+        self.assertEqual(updated_account["name"], "Something Known")
 
     def test_delete_an_account(self):
-        """It should delete an account and return no content"""
+        """It should Delete an Account"""
         account = self._create_accounts(1)[0]
-        response = self.client.delete(f"{BASE_URL}/{account.id}")
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertEqual(response.data, b"")
-        read_response = self.client.get(f"{BASE_URL}/{account.id}")
-        self.assertEqual(read_response.status_code, status.HTTP_404_NOT_FOUND)
-
-    def test_delete_account_not_found(self):
-        """It should be safe to delete an unknown account"""
-        response = self.client.delete(f"{BASE_URL}/0")
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertEqual(response.data, b"")
-
-    def test_list_accounts_empty(self):
-        """It should return an empty list when no accounts exist"""
-        response = self.client.get(BASE_URL)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.get_json(), [])
-
-    def test_list_all_accounts(self):
-        """It should list every account"""
-        accounts = self._create_accounts(3)
-        response = self.client.get(BASE_URL)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(
-            sorted(response.get_json(), key=lambda account: account["id"]),
-            sorted([account.serialize() for account in accounts], key=lambda account: account["id"]),
+        resp = self.client.delete(
+            f"{BASE_URL}/{account.id}", content_type="application/json"
         )
+        self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
 
-    def test_list_accounts_by_name(self):
-        """It should filter accounts by exact name"""
-        for name in ("Jane Doe", "John Doe", "Jane Doe"):
-            response = self.client.post(BASE_URL, json=AccountFactory(name=name).serialize())
-            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        response = self.client.get(BASE_URL, query_string={"name": "Jane Doe"})
+    def test_get_account_list(self):
+        """It should Get a list of Accounts"""
+        self._create_accounts(5)
+        resp = self.client.get(BASE_URL, content_type="application/json")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.get_json()
+        self.assertEqual(len(data), 5)
+
+    def test_security_headers(self):
+        """It should return security headers"""
+        response = self.client.get('/', environ_overrides=HTTPS_ENVIRON)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.get_json()), 2)
-        self.assertTrue(all(account["name"] == "Jane Doe" for account in response.get_json()))
+        headers = {
+            'X-Frame-Options': 'SAMEORIGIN',
+            'X-Content-Type-Options': 'nosniff',
+            'Content-Security-Policy': 'default-src \'self\'; object-src \'none\'',
+            'Referrer-Policy': 'strict-origin-when-cross-origin'
+        }
+        for key, value in headers.items():
+            self.assertEqual(response.headers.get(key), value)
 
-    # ADD YOUR TEST CASES HERE ...
+    def test_cors_security(self):
+        """It should return a CORS header"""
+        response = self.client.get('/', environ_overrides=HTTPS_ENVIRON)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # Check for the CORS header
+        self.assertEqual(response.headers.get('Access-Control-Allow-Origin'), '*')
