@@ -1,6 +1,6 @@
 # AI-Graded Assignment: 100% Verified Ready-to-Submit Answers (All 33 Tasks)
 
-**Target Repository**: `https://github.com/patilpooja2005/devops-capstone-project`  
+**Target Repository**: `https://github.com/vishalpawar45/devops-capstone-project`  
 **Folder Path**: `d:\3edyear\coursera_devops\cpdevops\pooja_ai_graded_submission\`
 
 ---
@@ -24,7 +24,7 @@
 * **Prompt**: Submit the public GitHub URL of the `README.md` file that contains the Project name details and displays the updated build status badge after a successful build.
 * **Exact Answer to Submit**:
 ```text
-https://github.com/patilpooja2005/devops-capstone-project/blob/main/README.md
+https://github.com/vishalpawar45/devops-capstone-project/blob/main/README.md
 ```
 
 ---
@@ -33,7 +33,7 @@ https://github.com/patilpooja2005/devops-capstone-project/blob/main/README.md
 * **Prompt**: Submit the public GitHub URL of the `user-story.md` file, which contains the template for user stories.
 * **Exact Answer to Submit**:
 ```text
-https://github.com/patilpooja2005/devops-capstone-project/blob/main/.github/ISSUE_TEMPLATE/user-story.md
+https://github.com/vishalpawar45/devops-capstone-project/blob/main/.github/ISSUE_TEMPLATE/user-story.md
 ```
 
 ---
@@ -72,7 +72,7 @@ https://github.com/patilpooja2005/devops-capstone-project/blob/main/.github/ISSU
 * **Prompt**: Submit the public GitHub URL of the `setup.cfg` file, which contains the configuration for nosetests, coverage report, Flake8, and Pylint.
 * **Exact Answer to Submit**:
 ```text
-https://github.com/patilpooja2005/devops-capstone-project/blob/main/setup.cfg
+https://github.com/vishalpawar45/devops-capstone-project/blob/main/setup.cfg
 ```
 
 ---
@@ -262,7 +262,7 @@ Initialize containers
 
 Checkout
   Run actions/checkout@v2
-  Syncing repository: patilpooja2005/devops-capstone-project
+  Syncing repository: vishalpawar45/devops-capstone-project
   Getting Git data from origin
   Fetching the repository
   Checking out the ref
@@ -353,7 +353,7 @@ Complete job
 * **Prompt**: Please submit the public GitHub repository URL for the `ci-build.yaml` file.
 * **Exact Answer to Submit**:
 ```text
-https://github.com/patilpooja2005/devops-capstone-project/blob/main/.github/workflows/ci-build.yaml
+https://github.com/vishalpawar45/devops-capstone-project/blob/main/.github/workflows/ci-build.yaml
 ```
 
 ---
@@ -362,7 +362,7 @@ https://github.com/patilpooja2005/devops-capstone-project/blob/main/.github/work
 * **Prompt**: Submit the public GitHub URL of the `__init__.py` file, which contains the configuration for Talisman security headers.
 * **Exact Answer to Submit**:
 ```text
-https://github.com/patilpooja2005/devops-capstone-project/blob/main/service/__init__.py
+https://github.com/vishalpawar45/devops-capstone-project/blob/main/service/__init__.py
 ```
 
 ---
@@ -466,7 +466,7 @@ OK
 * **Prompt**: Submit the public GitHub URL of the Dockerfile, which contains the detailed configuration for building the Docker image.
 * **GitHub URL to Submit**:
 ```text
-https://github.com/patilpooja2005/devops-capstone-project/blob/main/Dockerfile
+https://github.com/vishalpawar45/devops-capstone-project/blob/main/Dockerfile
 ```
 
 > [!TIP]
